@@ -1,0 +1,162 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $MainWindow: Adw.ApplicationWindow {
+  title: _("Courrier");
+  default-width: 1500;
+  default-height: 800;
+
+  Adw.Breakpoint {
+    condition ("max-width: 800sp")
+
+    setters {
+      outer_split_view.collapsed: true;
+      show_inboxes_button.visible: true;
+    }
+  }
+
+  Adw.Breakpoint {
+    condition ("max-width: 600sp")
+
+    setters {
+      outer_split_view.collapsed: true;
+      inner_split_view.collapsed: true;
+      show_inboxes_button.visible: true;
+    }
+  }
+
+  content: Adw.OverlaySplitView outer_split_view {
+    show-sidebar: bind show_inboxes_button.active;
+
+    sidebar: Box {
+      orientation: vertical;
+      vexpand: true;
+
+      Adw.ToolbarView {
+        top-bar-style: raised;
+
+        [top]
+        Adw.HeaderBar {
+          show-title: true;
+
+          title-widget: DropDown account_dropdown {
+            hexpand: true;
+            show-arrow: false;
+          };
+        }
+
+        content: Stack inboxes_stack {
+          ScrolledWindow   {
+            vexpand: true;
+
+            ListView inboxes_list_view {
+              styles [
+                "navigation-sidebar",
+              ]
+            }
+          }
+
+          Box inboxes_placeholder {
+            halign: center;
+            valign: center;
+
+            Adw.Spinner {
+              halign: center;
+              valign: center;
+              width-request: 48;
+              height-request: 48;
+            }
+          }
+        };
+      }
+    };
+
+    content: Adw.NavigationSplitView inner_split_view {
+      sidebar-width-fraction: 0.5;
+      max-sidebar-width: 500;
+
+      sidebar: Adw.NavigationPage emails_navigation_page {
+        title: _("Messages");
+
+        child: Adw.ToolbarView {
+          [top]
+          Adw.HeaderBar emails_header_bar {
+            show-title: true;
+
+            [start]
+            ToggleButton show_inboxes_button {
+              icon-name: "dock-left-symbolic";
+              tooltip-text: _("Toggle inboxes");
+              active: bind outer_split_view.show-sidebar;
+              visible: false;
+            }
+          }
+
+          content: Stack emails_stack {
+            ScrolledWindow emails_scrolled_window {
+              vexpand: true;
+
+              ListView emails_list_view {
+                styles [
+                  "navigation-sidebar",
+                ]
+              }
+            }
+
+            Box emails_placeholder {
+              halign: center;
+              valign: center;
+
+              Adw.Spinner {
+                halign: center;
+                valign: center;
+                width-request: 48;
+                height-request: 48;
+              }
+            }
+          };
+        };
+      };
+
+      content: Adw.NavigationPage {
+        title: _("Content");
+
+        child: Adw.ToolbarView {
+          [top]
+          Adw.HeaderBar {
+            show-title: false;
+          }
+
+          content: Stack content_stack {
+            Adw.StatusPage content_status_page {
+              title: _("Content");
+              description: _("Select an email to display its content");
+              icon-name: "mail-read-symbolic";
+            }
+
+            ScrolledWindow content_scrolled_window {}
+          };
+        };
+      };
+    };
+  };
+}
+
+menu primary_menu {
+  section {
+    item {
+      label: _("_Preferences");
+      action: "app.preferences";
+    }
+
+    item {
+      label: _("_Keyboard Shortcuts");
+      action: "win.show-help-overlay";
+    }
+
+    item {
+      label: _("_About Courrier");
+      action: "app.about";
+    }
+  }
+}

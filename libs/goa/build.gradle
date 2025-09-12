@@ -1,0 +1,18 @@
+plugins {
+    id("java-library")
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(22)
+    }
+}
+
+dependencies {
+    compileOnly("org.jetbrains:annotations:26.0.1")
+    api("io.github.jwharm.javagi:gio:0.12.2")
+}

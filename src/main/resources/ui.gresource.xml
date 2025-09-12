@@ -1,0 +1,6 @@
+<gresources>
+    <gresource prefix="/ca/kebs">
+        <file>main.ui</file>
+        <file alias="dock-left-symbolic">icons/dock-left-symbolic.svg</file>
+    </gresource>
+</gresources>
