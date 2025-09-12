@@ -1,6 +1,18 @@
 <gresources>
     <gresource prefix="/ca/kebs">
         <file>main.ui</file>
-        <file alias="dock-left-symbolic">icons/dock-left-symbolic.svg</file>
+    </gresource>
+    <gresource prefix="/ca/kebs/courrier/icons">
+        <file alias="scalable/actions/inbox-symbolic.svg" preprocess="xml-stripblanks">icons/inbox-symbolic.svg</file>
+        <file alias="scalable/actions/exclamation-mark-symbolic.svg" preprocess="xml-stripblanks">icons/exclamation-mark-symbolic.svg</file>
+        <file alias="scalable/actions/junk-symbolic.svg" preprocess="xml-stripblanks">icons/junk-symbolic.svg</file>
+        <file alias="scalable/actions/mail-archive-symbolic.svg" preprocess="xml-stripblanks">icons/mail-archive-symbolic.svg</file>
+        <file alias="scalable/actions/outbox-symbolic.svg" preprocess="xml-stripblanks">icons/outbox-symbolic.svg</file>
+        <file alias="scalable/actions/pencil-symbolic.svg" preprocess="xml-stripblanks">icons/pencil-symbolic.svg</file>
+        <file alias="scalable/actions/star-large-symbolic.svg" preprocess="xml-stripblanks">icons/star-large-symbolic.svg</file>
+        <file alias="scalable/actions/user-trash-symbolic.svg" preprocess="xml-stripblanks">icons/user-trash-symbolic.svg</file>
+        <file alias="scalable/actions/mail-read-symbolic.svg" preprocess="xml-stripblanks">icons/mail-read-symbolic.svg</file>
+        <file alias="scalable/actions/dock-left-symbolic.svg" preprocess="xml-stripblanks">icons/dock-left-symbolic.svg</file>
+        <file alias="scalable/actions/mailbox-symbolic.svg" preprocess="xml-stripblanks">icons/mailbox-symbolic.svg</file>
     </gresource>
 </gresources>

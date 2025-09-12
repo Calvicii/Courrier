@@ -30,6 +30,8 @@ import org.gnome.gio.ListStore
 import org.gnome.gtk.ScrolledWindow
 import org.gnome.gtk.SingleSelection
 import org.gnome.gtk.Stack
+import org.gnome.webkit.WebView
+import java.text.SimpleDateFormat
 
 @GtkTemplate(name = "MainWindow", ui = "/ca/kebs/main.ui")
 class MainWindow : ApplicationWindow() {
@@ -66,6 +68,16 @@ class MainWindow : ApplicationWindow() {
 
     @GtkChild(name = "emails_scrolled_window")
     lateinit var emailsScrolledWindow: ScrolledWindow
+
+    // Content widgets
+    @GtkChild(name = "content_stack")
+    lateinit var contentStack: Stack
+
+    @GtkChild(name = "content_scrolled_window")
+    lateinit var contentScrolledWindow: ScrolledWindow
+
+    @GtkChild(name = "content_status_page")
+    lateinit var contentStatusPage: StatusPage
 
     init {
         val goaClient = Client.sync(Cancellable())
@@ -142,9 +154,15 @@ class MainWindow : ApplicationWindow() {
 
             val inboxRows = folders.map { folder ->
                 val iconName = when (folder.name) {
+                    "INBOX" -> "inbox-symbolic"
                     "Inbox" -> "inbox-symbolic"
-                    "Sent" -> "outbox-symbolic"
+                    "All Mail" -> "mail-archive-symbolic"
                     "Drafts" -> "pencil-symbolic"
+                    "Important" -> "exclamation-mark-symbolic"
+                    "Sent Mail" -> "outbox-symbolic"
+                    "Spam" -> "junk-symbolic"
+                    "Starred" -> "star-large-symbolic"
+                    "Trash" -> "user-trash-symbolic"
                     else -> "mailbox-symbolic"
                 }
                 InboxRow(iconName, if (folder.name == "INBOX") "Inbox" else folder.name, folder.fullName)
@@ -168,10 +186,15 @@ class MainWindow : ApplicationWindow() {
                     if (inboxRow != null) {
                         emailsNavigationPage.title = inboxRow.name
                         emailsStack.visibleChild = emailsPlaceholder
+                        contentStack.visibleChild = contentStatusPage
                         val folder = folders[index]
                         loadMail(mailService, folder)
+                    } else {
+                        emailsNavigationPage.title = "Messages"
+                        // TODO: Display a status page
                     }
                 }
+
                 inboxesStack.visibleChild = inboxesScrolledWindow
                 false
             }
@@ -181,8 +204,12 @@ class MainWindow : ApplicationWindow() {
     private fun loadMail(service: MailService, folder: Folder) {
         scope.launch {
             val mails = service.getAllMails(folder)
-            val mailRows = mails.map { mail ->
-                MailRow(mail.subject, mail.from, mail.receivedDate.toString())
+            val sortedMails = mails.sortedByDescending { it.receivedDate }
+
+            val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+
+            val mailRows = sortedMails.map { mail ->
+                MailRow(mail.subject, mail.from, dateFormatter.format(mail.receivedDate))
             }
 
             GLib.idleAdd(GLib.PRIORITY_DEFAULT) {
@@ -197,11 +224,25 @@ class MainWindow : ApplicationWindow() {
                 selection.selected = -1
                 emailsListView.model = selection
 
+                selection.onNotify("selected") { _ ->
+                    val index = selection.selected
+                    val mail = if (index >= 0) sortedMails[index] else null
+                    if (mail != null) {
+                        val webView = WebView()
+                        webView.loadHtml(mail.content, "")
+                        contentScrolledWindow.child = webView
+                        contentStack.visibleChild = contentScrolledWindow
+                    } else {
+                        contentStack.visibleChild = contentStatusPage
+                    }
+                }
+
                 emailsStack.visibleChild = emailsScrolledWindow
                 false
             }
         }
     }
+
 
     private fun showEmptyEmailsWindow() {
         val mainBox = Box.builder().setOrientation(Orientation.VERTICAL).build()

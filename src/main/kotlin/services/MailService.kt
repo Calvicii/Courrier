@@ -2,6 +2,8 @@ package ca.kebs.courrier.services
 
 import ca.kebs.courrier.data.Mail
 import jakarta.mail.Folder
+import jakarta.mail.Message
+import jakarta.mail.Multipart
 import jakarta.mail.Session
 import jakarta.mail.Store
 import kotlinx.coroutines.Dispatchers
@@ -65,7 +67,26 @@ class MailService(
                 subject = message.subject,
                 from = message.from[0].toString(),
                 receivedDate = message.receivedDate,
+                content = extractContent(message),
             )
+        }
+    }
+
+    private fun extractContent(message: Message): String {
+        return when (val content = message.content) {
+            is String -> content
+            is Multipart -> {
+                (0 until content.count)
+                    .map { content.getBodyPart(it) }
+                    .firstOrNull { it.isMimeType("text/html") }
+                    ?.content as? String
+                    ?: (0 until content.count)
+                        .map { content.getBodyPart(it) }
+                        .firstOrNull { it.isMimeType("text/plain") }
+                        ?.content as? String
+                    ?: ""
+            }
+            else -> ""
         }
     }
 }

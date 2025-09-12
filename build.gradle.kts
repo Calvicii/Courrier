@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":libs:goa"))
     implementation("com.sun.mail:jakarta.mail:2.0.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("io.github.jwharm.javagi:webkit:0.12.2")
 }
 
 tasks.test {
@@ -64,7 +65,6 @@ tasks.register<Exec>("compileResources") {
         "--target=ui.gresource",
         "--sourcedir=${resourcesDir.absolutePath}",
         "--sourcedir=${generatedUiDir.get().asFile.absolutePath}",
-        "--generate",
         "ui.gresource.xml"
     )
 }
