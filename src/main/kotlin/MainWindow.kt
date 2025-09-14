@@ -26,10 +26,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.gnome.adw.NavigationPage
+import org.gnome.gio.AppInfo
 import org.gnome.gio.ListStore
 import org.gnome.gtk.ScrolledWindow
 import org.gnome.gtk.SingleSelection
 import org.gnome.gtk.Stack
+import org.gnome.webkit.NavigationPolicyDecision
+import org.gnome.webkit.PolicyDecisionType
 import org.gnome.webkit.WebView
 import java.text.SimpleDateFormat
 
@@ -228,7 +231,23 @@ class MainWindow : ApplicationWindow() {
                     val index = selection.selected
                     val mail = if (index >= 0) sortedMails[index] else null
                     if (mail != null) {
+                        var isInit = false
                         val webView = WebView()
+                        webView.onDecidePolicy { decision, decisionType ->
+                            if (decisionType == PolicyDecisionType.NAVIGATION_ACTION && isInit) {
+                                val navigation = decision as NavigationPolicyDecision
+                                val request = navigation.navigationAction.request
+                                val uri = request.uri
+
+                                AppInfo.launchDefaultForUri(uri, null)
+
+                                decision.ignore()
+                                true
+                            } else {
+                                isInit = true
+                                false
+                            }
+                        }
                         webView.loadHtml(mail.content, "")
                         contentScrolledWindow.child = webView
                         contentStack.visibleChild = contentScrolledWindow

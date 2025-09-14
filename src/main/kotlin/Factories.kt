@@ -28,7 +28,6 @@ fun setupInboxesFactories(): SignalListItemFactory {
         val box = listItem.child as Box
         val image = box.firstChild as Image
         val label = box.lastChild as Label
-        println(item.iconName)
         image.setFromIconName(item.iconName)
         label.text = item.name
     }
