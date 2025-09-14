@@ -46,7 +46,7 @@ template $MainWindow: Adw.ApplicationWindow {
         }
 
         content: Stack inboxes_stack {
-          ScrolledWindow   {
+          ScrolledWindow inboxes_scrolled_window {
             vexpand: true;
 
             ListView inboxes_list_view {
@@ -134,7 +134,52 @@ template $MainWindow: Adw.ApplicationWindow {
               icon-name: "mail-read-symbolic";
             }
 
-            ScrolledWindow content_scrolled_window {}
+            Box content_box {
+              orientation: vertical;
+              vexpand: true;
+              margin-start: 8;
+              margin-end: 8;
+              margin-top: 8;
+              margin-bottom: 8;
+
+              Box {
+                margin-bottom: 8;
+                styles ["card"]
+
+                Box {
+                  orientation: vertical;
+                  spacing: 8;
+                  margin-top: 8;
+                  margin-start: 8;
+                  margin-bottom: 8;
+
+                  Box details_sender_box {
+                    spacing: 8;
+                  }
+
+                  Box details_subject_box {}
+
+                  Box {
+                    spacing: 8;
+
+                    Label {
+                      label: _("To:");
+                      styles ["dimmed"]
+                    }
+
+                    Box details_to_box {
+                      spacing: 8;
+                    }
+                  }
+                }
+              }
+
+              ScrolledWindow content_scrolled_window {
+                vexpand: true;
+
+                Frame content_frame {}
+              }
+            }
           };
         };
       };

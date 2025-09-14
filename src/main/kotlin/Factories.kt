@@ -3,6 +3,7 @@ package ca.kebs.courrier
 import ca.kebs.courrier.helpers.splitFrom
 import ca.kebs.courrier.models.InboxRow
 import ca.kebs.courrier.models.MailRow
+import org.gnome.adw.Avatar
 import org.gnome.gtk.Align
 import org.gnome.gtk.Box
 import org.gnome.gtk.Image
@@ -41,13 +42,17 @@ fun setupEmailsFactories(): SignalListItemFactory {
         val box = Box.builder()
             .setOrientation(Orientation.VERTICAL)
             .setSpacing(8)
+            .setMarginTop(8)
+            .setMarginBottom(8)
             .build()
 
         val fromBox = Box.builder()
             .setOrientation(Orientation.HORIZONTAL)
             .setSpacing(8)
-            .setMarginStart(8)
-            .setMarginTop(8)
+            .build()
+        val avatar = Avatar.builder()
+            .setSize(32)
+            .setShowInitials(true)
             .build()
         val from = Label.builder()
             .setHalign(Align.START)
@@ -60,15 +65,13 @@ fun setupEmailsFactories(): SignalListItemFactory {
 
         val subject = Label.builder()
             .setHalign(Align.START)
-            .setMarginStart(8)
             .build()
         val receivedDate = Label.builder()
             .setHalign(Align.START)
-            .setMarginStart(8)
-            .setMarginBottom(8)
             .setCssClasses(arrayOf("dimmed"))
             .build()
 
+        fromBox.append(avatar)
         fromBox.append(from)
         fromBox.append(address)
         box.append(fromBox)
@@ -81,14 +84,18 @@ fun setupEmailsFactories(): SignalListItemFactory {
         val listItem = it as ListItem
         val item = listItem.item as MailRow
         val box = listItem.child as Box
+
         val fromBox = box.firstChild as Box
-        val from = fromBox.firstChild as Label
+        val avatar = fromBox.firstChild as Avatar
+        val from = avatar.nextSibling as Label
         val address = fromBox.lastChild as Label
+
         val subject = fromBox.nextSibling as Label
         val receivedDate = box.lastChild as Label
 
         val sender = splitFrom(item.from)
 
+        avatar.text = sender.first
         from.setMarkup("<b>${sender.first}</b>")
         address.text = sender.second
         subject.text = item.subject

@@ -1,5 +1,7 @@
 package ca.kebs.courrier
 
+import ca.kebs.courrier.data.Mail
+import ca.kebs.courrier.helpers.splitFrom
 import ca.kebs.courrier.models.InboxRow
 import ca.kebs.courrier.models.MailRow
 import ca.kebs.courrier.services.MailService
@@ -28,6 +30,8 @@ import kotlinx.coroutines.launch
 import org.gnome.adw.NavigationPage
 import org.gnome.gio.AppInfo
 import org.gnome.gio.ListStore
+import org.gnome.gtk.Frame
+import org.gnome.gtk.Label
 import org.gnome.gtk.ScrolledWindow
 import org.gnome.gtk.SingleSelection
 import org.gnome.gtk.Stack
@@ -76,11 +80,24 @@ class MainWindow : ApplicationWindow() {
     @GtkChild(name = "content_stack")
     lateinit var contentStack: Stack
 
-    @GtkChild(name = "content_scrolled_window")
-    lateinit var contentScrolledWindow: ScrolledWindow
+    @GtkChild(name = "content_box")
+    lateinit var contentBox: Box
+
+    @GtkChild(name = "content_frame")
+    lateinit var contentFrame: Frame
 
     @GtkChild(name = "content_status_page")
     lateinit var contentStatusPage: StatusPage
+
+    // Email's details
+    @GtkChild(name = "details_sender_box")
+    lateinit var detailsSenderBox: Box
+
+    @GtkChild(name = "details_subject_box")
+    lateinit var detailsSubjectBox: Box
+
+    @GtkChild(name = "details_to_box")
+    lateinit var detailsToBox: Box
 
     init {
         val goaClient = Client.sync(Cancellable())
@@ -231,8 +248,17 @@ class MainWindow : ApplicationWindow() {
                     val index = selection.selected
                     val mail = if (index >= 0) sortedMails[index] else null
                     if (mail != null) {
+                        resetEmailDetails()
+
                         var isInit = false
                         val webView = WebView()
+
+                        // Remove context menu
+                        webView.onContextMenu { _, _ ->
+                            true
+                        }
+
+                        // Redirect links to the default browser
                         webView.onDecidePolicy { decision, decisionType ->
                             if (decisionType == PolicyDecisionType.NAVIGATION_ACTION && isInit) {
                                 val navigation = decision as NavigationPolicyDecision
@@ -248,9 +274,12 @@ class MainWindow : ApplicationWindow() {
                                 false
                             }
                         }
+
                         webView.loadHtml(mail.content, "")
-                        contentScrolledWindow.child = webView
-                        contentStack.visibleChild = contentScrolledWindow
+                        contentFrame.child = webView
+                        contentStack.visibleChild = contentBox
+
+                        setupEmailDetails(mail)
                     } else {
                         contentStack.visibleChild = contentStatusPage
                     }
@@ -262,6 +291,42 @@ class MainWindow : ApplicationWindow() {
         }
     }
 
+    private fun setupEmailDetails(mail: Mail) {
+        val sender = splitFrom(mail.from)
+
+        val senderBox = Box.builder().setSpacing(8).build()
+
+        val from = Label.builder().setUseMarkup(true).build()
+        from.setMarkup("<b>${sender.first}</b>")
+
+        val address = Label.builder().setLabel(sender.second).setCssClasses(arrayOf("dimmed")).build()
+
+        senderBox.append(from)
+        senderBox.append(address)
+        detailsSenderBox.append(senderBox)
+
+        val subject = Label.builder().setLabel(mail.subject).build()
+        detailsSubjectBox.append(subject)
+
+        val recipientBox = Box.builder().setSpacing(8).build()
+
+        val recipient = Label.builder().setLabel("Coming soon").build()
+
+        recipientBox.append(recipient)
+        detailsToBox.append(recipientBox)
+    }
+
+    private fun resetEmailDetails() {
+        while (detailsSenderBox.firstChild != null) {
+            detailsSenderBox.remove(detailsSenderBox.firstChild)
+        }
+        while (detailsSubjectBox.firstChild != null) {
+            detailsSubjectBox.remove(detailsSubjectBox.firstChild)
+        }
+        while (detailsToBox.firstChild != null) {
+            detailsToBox.remove(detailsToBox.firstChild)
+        }
+    }
 
     private fun showEmptyEmailsWindow() {
         val mainBox = Box.builder().setOrientation(Orientation.VERTICAL).build()
