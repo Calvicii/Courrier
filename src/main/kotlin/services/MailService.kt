@@ -24,11 +24,10 @@ class MailService(
             val props = Properties().apply {
                 put("mail.store.protocol", "imaps")
                 put("mail.imaps.host", host)
-                put("mail.imaps.port", 993)
-                put("mail.imaps.ssl.enable", true)
-                put("mail.imaps.auth.mechanisms", "XOAUTH2")
-                put("mail.imaps.starttls.enable", "true")
+                put("mail.imaps.port", "993")
+                put("mail.imaps.ssl.enable", "true")
                 put("mail.imaps.ssl.checkserveridentity", "true")
+                put("mail.imaps.auth.mechanisms", "XOAUTH2")
             }
 
             session = Session.getInstance(props, null)
@@ -66,6 +65,7 @@ class MailService(
             Mail(
                 subject = message.subject,
                 from = message.from[0].toString(),
+                to = message.allRecipients.toList().map { it.toString() },
                 receivedDate = message.receivedDate,
                 content = extractContent(message),
             )

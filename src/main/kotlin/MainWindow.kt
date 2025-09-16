@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.gnome.adw.NavigationPage
+import org.gnome.adw.NavigationSplitView
 import org.gnome.gio.AppInfo
 import org.gnome.gio.ListStore
 import org.gnome.gtk.Frame
@@ -35,6 +36,7 @@ import org.gnome.gtk.Label
 import org.gnome.gtk.ScrolledWindow
 import org.gnome.gtk.SingleSelection
 import org.gnome.gtk.Stack
+import org.gnome.pango.EllipsizeMode
 import org.gnome.webkit.NavigationPolicyDecision
 import org.gnome.webkit.PolicyDecisionType
 import org.gnome.webkit.WebView
@@ -46,6 +48,9 @@ class MainWindow : ApplicationWindow() {
 
     @GtkChild(name = "account_dropdown")
     lateinit var accountDropDown: DropDown
+
+    @GtkChild(name = "inner_split_view")
+    lateinit var innerSplitView: NavigationSplitView
 
     // Inboxes widgets
     @GtkChild(name = "inboxes_list_view")
@@ -213,6 +218,7 @@ class MainWindow : ApplicationWindow() {
                         emailsNavigationPage.title = "Messages"
                         // TODO: Display a status page
                     }
+                    innerSplitView.showContent = false
                 }
 
                 inboxesStack.visibleChild = inboxesScrolledWindow
@@ -278,10 +284,12 @@ class MainWindow : ApplicationWindow() {
                         webView.loadHtml(mail.content, "")
                         contentFrame.child = webView
                         contentStack.visibleChild = contentBox
+                        innerSplitView.showContent = true
 
                         setupEmailDetails(mail)
                     } else {
                         contentStack.visibleChild = contentStatusPage
+                        innerSplitView.showContent = false
                     }
                 }
 
@@ -296,23 +304,29 @@ class MainWindow : ApplicationWindow() {
 
         val senderBox = Box.builder().setSpacing(8).build()
 
-        val from = Label.builder().setUseMarkup(true).build()
+        val from = Label.builder().setUseMarkup(true).setEllipsize(EllipsizeMode.END).build()
         from.setMarkup("<b>${sender.first}</b>")
 
-        val address = Label.builder().setLabel(sender.second).setCssClasses(arrayOf("dimmed")).build()
+        val address = Label.builder()
+            .setLabel(sender.second)
+            .setEllipsize(EllipsizeMode.END)
+            .setCssClasses(arrayOf("dimmed"))
+            .build()
 
         senderBox.append(from)
         senderBox.append(address)
         detailsSenderBox.append(senderBox)
 
-        val subject = Label.builder().setLabel(mail.subject).build()
+        val subject = Label.builder().setLabel(mail.subject).setEllipsize(EllipsizeMode.END).build()
         detailsSubjectBox.append(subject)
 
         val recipientBox = Box.builder().setSpacing(8).build()
 
-        val recipient = Label.builder().setLabel("Coming soon").build()
+        for (address in mail.to) {
+            val label = Label.builder().setLabel(address).setEllipsize(EllipsizeMode.END).build()
+            recipientBox.append(label)
+        }
 
-        recipientBox.append(recipient)
         detailsToBox.append(recipientBox)
     }
 

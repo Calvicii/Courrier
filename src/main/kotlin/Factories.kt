@@ -11,6 +11,7 @@ import org.gnome.gtk.Label
 import org.gnome.gtk.ListItem
 import org.gnome.gtk.Orientation
 import org.gnome.gtk.SignalListItemFactory
+import org.gnome.pango.EllipsizeMode
 
 fun setupInboxesFactories(): SignalListItemFactory {
     val inboxFactory = SignalListItemFactory()
@@ -57,18 +58,22 @@ fun setupEmailsFactories(): SignalListItemFactory {
         val from = Label.builder()
             .setHalign(Align.START)
             .setUseMarkup(true)
+            .setEllipsize(EllipsizeMode.END)
             .build()
         val address = Label.builder()
             .setHalign(Align.START)
             .setCssClasses(arrayOf("dimmed"))
+            .setEllipsize(EllipsizeMode.END)
             .build()
 
         val subject = Label.builder()
             .setHalign(Align.START)
+            .setEllipsize(EllipsizeMode.END)
             .build()
         val receivedDate = Label.builder()
             .setHalign(Align.START)
             .setCssClasses(arrayOf("dimmed"))
+            .setEllipsize(EllipsizeMode.END)
             .build()
 
         fromBox.append(avatar)
