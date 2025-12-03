@@ -3,6 +3,16 @@
     <gresource prefix="/ca/kebs/Courrier">
     </gresource>
     <gresource prefix="/ca/kebs/Courrier/icons/scalable/actions">
-        <file preprocess="xml-stripblanks" alias="dock-left-symbolic.svg">icons/dock-left-symbolic.svg</file>
+        <file alias="dock-left-symbolic.svg">icons/dock-left-symbolic.svg</file>
+        <file alias="inbox-symbolic.svg">icons/inbox-symbolic.svg</file>
+        <file alias="exclamation-mark-symbolic.svg">icons/exclamation-mark-symbolic.svg</file>
+        <file alias="junk-symbolic.svg">icons/junk-symbolic.svg</file>
+        <file alias="mail-archive-symbolic.svg">icons/mail-archive-symbolic.svg</file>
+        <file alias="outbox-symbolic.svg">icons/outbox-symbolic.svg</file>
+        <file alias="pencil-symbolic.svg">icons/pencil-symbolic.svg</file>
+        <file alias="star-large-symbolic.svg">icons/star-large-symbolic.svg</file>
+        <file alias="user-trash-symbolic.svg">icons/user-trash-symbolic.svg</file>
+        <file alias="mail-read-symbolic.svg">icons/mail-read-symbolic.svg</file>
+        <file alias="mail-unread-symbolic.svg">icons/mail-unread-symbolic.svg</file>
     </gresource>
 </gresources>

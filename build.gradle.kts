@@ -13,7 +13,10 @@ repositories {
 }
 
 dependencies {
+    implementation("com.sun.mail:jakarta.mail:2.0.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("io.github.compose4gtk:compose-4-gtk:0.7")
+    implementation(project(":libs:goa"))
     testImplementation(kotlin("test"))
 }
 
