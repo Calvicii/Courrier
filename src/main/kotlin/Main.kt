@@ -3,9 +3,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import components.AccountDropDown
 import components.FolderList
+import components.MessageList
 import components.ShowSidebarButton
 import goa.GoaObject
 import io.github.compose4gtk.adw.adwApplication
@@ -16,16 +18,13 @@ import io.github.compose4gtk.adw.components.NavigationSplitView
 import io.github.compose4gtk.adw.components.OverlaySplitView
 import io.github.compose4gtk.adw.components.ToolbarView
 import io.github.compose4gtk.adw.components.rememberNavigationSplitViewState
-import io.github.compose4gtk.gtk.components.Button
 import io.github.compose4gtk.gtk.components.Label
 import io.github.compose4gtk.gtk.components.VerticalBox
 import io.github.compose4gtk.modifier.Modifier
 import io.github.compose4gtk.modifier.expandHorizontally
 import io.github.compose4gtk.useGioResource
 import jakarta.mail.Folder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import jakarta.mail.Message
 import kotlinx.coroutines.launch
 import org.gnome.adw.BreakpointCondition
 import org.gnome.adw.ToolbarStyle
@@ -34,8 +33,8 @@ import services.MailService
 fun main(args: Array<String>) {
     useGioResource("resources.gresource") {
         adwApplication(appId = "ca.kebs.Courrier", args) {
-            val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-            var mailService: MailService?
+            val scope = rememberCoroutineScope()
+            var mailService by remember { mutableStateOf<MailService?>(null) }
 
             val splitViewBreakpointCondition = remember { BreakpointCondition.parse("max-width: 800sp") }
             val overlayBreakpointCondition = remember { BreakpointCondition.parse("max-width: 1000sp") }
@@ -61,14 +60,28 @@ fun main(args: Array<String>) {
 
                 var selectedAccount by remember { mutableStateOf<GoaObject?>(null) }
                 var selectedFolder by remember { mutableStateOf<Folder?>(null) }
+                var selectedMessage by remember { mutableStateOf<Message?>(null) }
                 val folders = remember { mutableStateListOf<Folder>() }
+                val messages = remember { mutableStateListOf<Message>() }
+
 
                 LaunchedEffect(selectedAccount) {
-                    scope.launch {
-                        if (selectedAccount != null) {
-                            mailService = MailService.create(selectedAccount!!)
-                            folders.clear()
-                            folders.addAll(mailService.getFolders())
+                    folders.clear()
+                    messages.clear()
+                    selectedAccount?.let {
+                        scope.launch {
+                            mailService = MailService.create(it)
+                            folders.addAll(mailService!!.getFolders())
+                        }
+                    }
+                }
+
+                LaunchedEffect(selectedFolder) {
+                    messages.clear()
+                    selectedFolder?.let {
+                        scope.launch {
+                            val fetchedMessages = mailService?.getMessages(it) ?: emptyList()
+                            messages.addAll(fetchedMessages)
                         }
                     }
                 }
@@ -124,11 +137,7 @@ fun main(args: Array<String>) {
                                     }
                                 ) {
                                     VerticalBox {
-                                        Label("Sidebar")
-                                        Button(
-                                            "$collapsedNavigationSplitView & $collapsedOverlaySplitView",
-                                            onClick = { navigationSplitViewState.showContent() }
-                                        )
+                                        MessageList(messages = messages, onMessageChange = { selectedMessage = it })
                                     }
                                 }
                             }
@@ -141,10 +150,7 @@ fun main(args: Array<String>) {
                                 }
                             ) {
                                 VerticalBox {
-                                    Label("Content")
-                                    Button(
-                                        "$collapsedNavigationSplitView & $collapsedOverlaySplitView",
-                                        onClick = { navigationSplitViewState.hideContent() })
+                                    selectedMessage?.let {  }
                                 }
                             }
                         }

@@ -2,7 +2,9 @@ package services
 
 import goa.GoaObject
 import io.github.jwharm.javagi.base.Out
+import jakarta.mail.FetchProfile
 import jakarta.mail.Folder
+import jakarta.mail.Message
 import jakarta.mail.Session
 import jakarta.mail.Store
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +60,7 @@ class MailService private constructor(
     }
 
     suspend fun getFolders(): List<Folder> = withContext(Dispatchers.IO) {
-        val connectedStore = store ?: throw IllegalStateException("store not set")
+        val connectedStore = store ?: throw IllegalStateException("Store not set")
         val defaultFolder = connectedStore.defaultFolder
 
         fun collectFolders(folder: Folder): List<Folder> {
@@ -74,6 +76,28 @@ class MailService private constructor(
             return result
         }
 
-        collectFolders(defaultFolder)
+        val collected = collectFolders(defaultFolder)
+        return@withContext collected
+    }
+
+    suspend fun getMessages(folder: Folder): List<Message> = withContext(Dispatchers.IO) {
+        if (!folder.exists()) return@withContext emptyList()
+
+        if (!folder.isOpen) folder.open(Folder.READ_ONLY)
+
+        val count = folder.messageCount
+        if (count <= 0) return@withContext emptyList()
+
+        val start = maxOf(1, count - 99)
+        val messages = folder.getMessages(start, count)
+
+        val fp = FetchProfile().apply {
+            add(FetchProfile.Item.ENVELOPE)
+            add(FetchProfile.Item.FLAGS)
+        }
+
+        folder.fetch(messages, fp)
+
+        return@withContext messages.toList()
     }
 }
