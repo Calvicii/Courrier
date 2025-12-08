@@ -68,6 +68,7 @@ class MailService(
                 to = message.allRecipients.toList().map { it.toString() },
                 receivedDate = message.receivedDate,
                 content = extractContent(message),
+                ref = message,
             )
         }
     }

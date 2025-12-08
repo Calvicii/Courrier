@@ -235,7 +235,7 @@ class MainWindow : ApplicationWindow() {
             val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
             val mailRows = sortedMails.map { mail ->
-                MailRow(mail.subject, mail.from, dateFormatter.format(mail.receivedDate))
+                MailRow(mail.subject, mail.from, dateFormatter.format(mail.receivedDate), mail.ref)
             }
 
             GLib.idleAdd(GLib.PRIORITY_DEFAULT) {

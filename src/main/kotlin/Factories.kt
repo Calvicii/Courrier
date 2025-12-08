@@ -1,17 +1,28 @@
 package ca.kebs.courrier
 
+import ca.kebs.courrier.helpers.getTrashFolder
+import ca.kebs.courrier.helpers.moveEmail
 import ca.kebs.courrier.helpers.splitFrom
 import ca.kebs.courrier.models.InboxRow
 import ca.kebs.courrier.models.MailRow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.gnome.adw.Avatar
 import org.gnome.gtk.Align
 import org.gnome.gtk.Box
+import org.gnome.gtk.Button
+import org.gnome.gtk.GestureClick
 import org.gnome.gtk.Image
 import org.gnome.gtk.Label
 import org.gnome.gtk.ListItem
 import org.gnome.gtk.Orientation
+import org.gnome.gtk.Popover
 import org.gnome.gtk.SignalListItemFactory
 import org.gnome.pango.EllipsizeMode
+
+private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 fun setupInboxesFactories(): SignalListItemFactory {
     val inboxFactory = SignalListItemFactory()
@@ -45,6 +56,7 @@ fun setupEmailsFactories(): SignalListItemFactory {
             .setSpacing(8)
             .setMarginTop(8)
             .setMarginBottom(8)
+            .setCanTarget(true)
             .build()
 
         val fromBox = Box.builder()
@@ -76,6 +88,23 @@ fun setupEmailsFactories(): SignalListItemFactory {
             .setEllipsize(EllipsizeMode.END)
             .build()
 
+        // Context menu
+        val popover = Popover.builder()
+            .setChild(Box(Orientation.VERTICAL, 8))
+            .build()
+
+        popover.parent = box
+
+        val rightClickGesture = GestureClick.builder()
+            .setButton(3)
+            .build()
+
+        rightClickGesture.onPressed { _, _, _ ->
+            popover.popup()
+        }
+
+        box.addController(rightClickGesture)
+
         fromBox.append(avatar)
         fromBox.append(from)
         fromBox.append(address)
@@ -89,8 +118,10 @@ fun setupEmailsFactories(): SignalListItemFactory {
         val listItem = it as ListItem
         val item = listItem.item as MailRow
         val box = listItem.child as Box
+        val popover = box.firstChild as Popover
 
-        val fromBox = box.firstChild as Box
+        val contextMenuBox = popover.firstChild.firstChild as Box
+        val fromBox = popover.nextSibling as Box
         val avatar = fromBox.firstChild as Avatar
         val from = avatar.nextSibling as Label
         val address = fromBox.lastChild as Label
@@ -105,6 +136,25 @@ fun setupEmailsFactories(): SignalListItemFactory {
         address.text = sender.second
         subject.text = item.subject
         receivedDate.text = item.receivedDate
+
+        // Context menu
+        val moveButton = Button.builder()
+            .setLabel("Move to trash")
+            .setCssClasses(arrayOf("flat"))
+            .onClicked {
+                scope.launch {
+                    val store = item.mail.folder.store
+                    val trashFolder = getTrashFolder(store)
+                    if (trashFolder != null) {
+                        moveEmail(item.mail, trashFolder)
+                    } else {
+                        println("Trash folder not found")
+                    }
+                }
+            }
+            .build()
+
+        contextMenuBox.append(moveButton)
     }
     return emailsFactory
 }
