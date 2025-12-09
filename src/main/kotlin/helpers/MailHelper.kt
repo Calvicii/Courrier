@@ -1,9 +1,11 @@
 package ca.kebs.courrier.helpers
 
+import ca.kebs.courrier.data.MessageDTO
 import com.sun.mail.imap.IMAPFolder
 import jakarta.mail.Flags.Flag
 import jakarta.mail.Folder
 import jakarta.mail.Message
+import jakarta.mail.Multipart
 import jakarta.mail.Store
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,7 +16,11 @@ fun splitFrom(from: String): Pair<String, String> {
 
 fun getTrashFolder(store: Store): Folder? {
     val gmailTrash = listOf("[Gmail]/Trash", "[Google Mail]/Trash").firstNotNullOfOrNull { name ->
-        try { store.getFolder(name).takeIf { it.exists() } } catch (_: Exception) { null }
+        try {
+            store.getFolder(name).takeIf { it.exists() }
+        } catch (_: Exception) {
+            null
+        }
     }
     if (gmailTrash != null) return gmailTrash
 
@@ -23,7 +29,8 @@ fun getTrashFolder(store: Store): Folder? {
         try {
             val f = store.getFolder(name)
             if (f.exists()) return f
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+        }
     }
 
     try {
@@ -43,7 +50,8 @@ fun getTrashFolder(store: Store): Folder? {
                 }
             }
         }
-    } catch (_: Exception) { }
+    } catch (_: Exception) {
+    }
 
     return null
 }
@@ -63,14 +71,41 @@ suspend fun moveEmail(message: Message, targetFolder: Folder) {
             }
             targetFolder.open(Folder.READ_WRITE)
 
-            try {
-                folder.copyMessages(arrayOf(message), targetFolder)
-            } finally {
-                message.flags.add(Flag.DELETED)
-                targetFolder.close(true)
-            }
+            folder.copyMessages(arrayOf(message), targetFolder)
+            message.setFlag(Flag.DELETED, true)
+            folder.expunge()
         } catch (error: Exception) {
             error.printStackTrace()
         }
     }
+}
+
+fun extractContent(message: Message): String {
+    return when (val content = message.content) {
+        is String -> content
+        is Multipart -> {
+            (0 until content.count)
+                .map { content.getBodyPart(it) }
+                .firstOrNull { it.isMimeType("text/html") }
+                ?.content as? String
+                ?: (0 until content.count)
+                    .map { content.getBodyPart(it) }
+                    .firstOrNull { it.isMimeType("text/plain") }
+                    ?.content as? String
+                ?: ""
+        }
+
+        else -> ""
+    }
+}
+
+suspend fun toMessageDTO(message: Message): MessageDTO = withContext(Dispatchers.IO) {
+    MessageDTO(
+        subject = message.subject,
+        from = message.from[0].toString(),
+        to = message.allRecipients.toList().map { it.toString() },
+        receivedDate = message.receivedDate,
+        content = extractContent(message),
+        ref = message,
+    )
 }

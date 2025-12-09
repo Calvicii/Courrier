@@ -1,13 +1,13 @@
 package ca.kebs.courrier
 
-import ca.kebs.courrier.data.Mail
+import ca.kebs.courrier.data.MessageDTO
 import ca.kebs.courrier.helpers.splitFrom
+import ca.kebs.courrier.helpers.toMessageDTO
 import ca.kebs.courrier.models.InboxRow
 import ca.kebs.courrier.models.MailRow
-import ca.kebs.courrier.services.MailService
+import ca.kebs.courrier.services.MailManager
 import goa.Client
 import goa.GoaObject
-import io.github.jwharm.javagi.base.Out
 import io.github.jwharm.javagi.gtk.annotations.GtkChild
 import io.github.jwharm.javagi.gtk.annotations.GtkTemplate
 import jakarta.mail.Folder
@@ -135,7 +135,7 @@ class MainWindow : ApplicationWindow() {
 
         // Setup factories
         inboxesListView.factory = setupInboxesFactories()
-        emailsListView.factory = setupEmailsFactories()
+        emailsListView.factory = setupMessagesFactories()
 
         inboxesStack.visibleChild = inboxesPlaceholder
 
@@ -150,32 +150,10 @@ class MainWindow : ApplicationWindow() {
         }
     }
 
-    suspend fun loginMail(account: GoaObject): MailService {
-        val mail = account.mail
-        val service = MailService(mail.imapHost)
-
-        val oauth2 = account.oauth2Based
-        val outToken = Out<String>()
-        val outExpires = Out<Int>()
-
-        val success = oauth2.callGetAccessTokenSync(outToken, outExpires, Cancellable())
-
-        if (!success) {
-            throw RuntimeException("Could not get access token from GOA")
-        }
-
-        val accessToken = outToken.get().toString()
-        val username = mail.imapUserName
-
-        service.login(username, accessToken)
-
-        return service
-    }
-
     private fun loadAccount(account: GoaObject) {
         scope.launch {
-            val mailService = loginMail(account)
-            val folders = mailService.getAllFolders()
+            MailManager.switchAccount(account)
+            val folders = MailManager.getFolders()
 
             val inboxRows = folders.map { folder ->
                 val iconName = when (folder.name) {
@@ -195,9 +173,7 @@ class MainWindow : ApplicationWindow() {
 
             GLib.idleAdd(GLib.PRIORITY_DEFAULT) {
                 val listStore = ListStore<InboxRow>()
-                for (inboxRow in inboxRows) {
-                    listStore.append(inboxRow)
-                }
+                listStore.addAll(inboxRows)
                 val selection: SingleSelection<ListStore<InboxRow>> = SingleSelection(listStore)
 
                 selection.canUnselect = true
@@ -213,7 +189,7 @@ class MainWindow : ApplicationWindow() {
                         emailsStack.visibleChild = emailsPlaceholder
                         contentStack.visibleChild = contentStatusPage
                         val folder = folders[index]
-                        loadMail(mailService, folder)
+                        loadMessages(folder)
                     } else {
                         emailsNavigationPage.title = "Messages"
                         // TODO: Display a status page
@@ -227,22 +203,26 @@ class MainWindow : ApplicationWindow() {
         }
     }
 
-    private fun loadMail(service: MailService, folder: Folder) {
+    private fun loadMessages(folder: Folder) {
         scope.launch {
-            val mails = service.getAllMails(folder)
-            val sortedMails = mails.sortedByDescending { it.receivedDate }
+            MailManager.switchFolder(folder)
+            val messages: List<MessageDTO> = MailManager.getMessages().map { message -> toMessageDTO(message) }
+            val sortedMessages = messages.sortedByDescending { it.receivedDate }
 
             val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
-            val mailRows = sortedMails.map { mail ->
-                MailRow(mail.subject, mail.from, dateFormatter.format(mail.receivedDate), mail.ref)
+            val mailRows = sortedMessages.map { message ->
+                MailRow(
+                    message.subject,
+                    message.from,
+                    dateFormatter.format(message.receivedDate),
+                    message.ref
+                )
             }
 
             GLib.idleAdd(GLib.PRIORITY_DEFAULT) {
                 val listStore = ListStore<MailRow>()
-                for (mailRow in mailRows) {
-                    listStore.append(mailRow)
-                }
+                listStore.addAll(mailRows)
                 val selection: SingleSelection<ListStore<MailRow>> = SingleSelection(listStore)
 
                 selection.canUnselect = true
@@ -250,19 +230,14 @@ class MainWindow : ApplicationWindow() {
                 selection.selected = -1
                 emailsListView.model = selection
 
-                selection.onNotify("selected") { _ ->
+                selection.onNotify("selected") {
                     val index = selection.selected
-                    val mail = if (index >= 0) sortedMails[index] else null
-                    if (mail != null) {
+                    val message = if (index >= 0) sortedMessages[index] else null
+                    if (message != null) {
                         resetEmailDetails()
 
                         var isInit = false
                         val webView = WebView()
-
-                        // Remove context menu
-                        webView.onContextMenu { _, _ ->
-                            true
-                        }
 
                         // Redirect links to the default browser
                         webView.onDecidePolicy { decision, decisionType ->
@@ -281,12 +256,23 @@ class MainWindow : ApplicationWindow() {
                             }
                         }
 
-                        webView.loadHtml(mail.content, "")
+                        // Disable web related context menu
+                        webView.onContextMenu { _, hitTestResult ->
+                            if (hitTestResult.contextIsSelection() ||
+                                hitTestResult.contextIsLink() ||
+                                hitTestResult.contextIsImage()) {
+                                false
+                            } else {
+                                true
+                            }
+                        }
+
+                        webView.loadHtml(message.content, null)
                         contentFrame.child = webView
                         contentStack.visibleChild = contentBox
                         innerSplitView.showContent = true
 
-                        setupEmailDetails(mail)
+                        setupEmailDetails(message)
                     } else {
                         contentStack.visibleChild = contentStatusPage
                         innerSplitView.showContent = false
@@ -299,8 +285,9 @@ class MainWindow : ApplicationWindow() {
         }
     }
 
-    private fun setupEmailDetails(mail: Mail) {
-        val sender = splitFrom(mail.from)
+    private fun setupEmailDetails(message: MessageDTO) {
+        val to = message.to
+        val sender = splitFrom(message.from)
 
         val senderBox = Box.builder().setSpacing(8).build()
 
@@ -317,12 +304,12 @@ class MainWindow : ApplicationWindow() {
         senderBox.append(address)
         detailsSenderBox.append(senderBox)
 
-        val subject = Label.builder().setLabel(mail.subject).setEllipsize(EllipsizeMode.END).build()
+        val subject = Label.builder().setLabel(message.subject).setEllipsize(EllipsizeMode.END).build()
         detailsSubjectBox.append(subject)
 
         val recipientBox = Box.builder().setSpacing(8).build()
 
-        for (address in mail.to) {
+        for (address in to) {
             val label = Label.builder().setLabel(address).setEllipsize(EllipsizeMode.END).build()
             recipientBox.append(label)
         }

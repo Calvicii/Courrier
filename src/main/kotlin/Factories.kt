@@ -1,18 +1,14 @@
 package ca.kebs.courrier
 
-import ca.kebs.courrier.helpers.getTrashFolder
-import ca.kebs.courrier.helpers.moveEmail
 import ca.kebs.courrier.helpers.splitFrom
 import ca.kebs.courrier.models.InboxRow
 import ca.kebs.courrier.models.MailRow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import org.gnome.adw.Avatar
 import org.gnome.gtk.Align
 import org.gnome.gtk.Box
-import org.gnome.gtk.Button
 import org.gnome.gtk.GestureClick
 import org.gnome.gtk.Image
 import org.gnome.gtk.Label
@@ -47,9 +43,9 @@ fun setupInboxesFactories(): SignalListItemFactory {
     return inboxFactory
 }
 
-fun setupEmailsFactories(): SignalListItemFactory {
-    val emailsFactory = SignalListItemFactory()
-    emailsFactory.onSetup {
+fun setupMessagesFactories(): SignalListItemFactory {
+    val messagesFactory = SignalListItemFactory()
+    messagesFactory.onSetup {
         val listItem = it as ListItem
         val box = Box.builder()
             .setOrientation(Orientation.VERTICAL)
@@ -114,7 +110,7 @@ fun setupEmailsFactories(): SignalListItemFactory {
         box.append(receivedDate)
         listItem.child = box
     }
-    emailsFactory.onBind {
+    messagesFactory.onBind {
         val listItem = it as ListItem
         val item = listItem.item as MailRow
         val box = listItem.child as Box
@@ -138,23 +134,32 @@ fun setupEmailsFactories(): SignalListItemFactory {
         receivedDate.text = item.receivedDate
 
         // Context menu
-        val moveButton = Button.builder()
-            .setLabel("Move to trash")
-            .setCssClasses(arrayOf("flat"))
-            .onClicked {
-                scope.launch {
-                    val store = item.mail.folder.store
-                    val trashFolder = getTrashFolder(store)
-                    if (trashFolder != null) {
-                        moveEmail(item.mail, trashFolder)
-                    } else {
-                        println("Trash folder not found")
-                    }
-                }
-            }
-            .build()
-
-        contextMenuBox.append(moveButton)
+//        val start = System.currentTimeMillis()
+//        val store = item.message.folder.store
+//        println(System.currentTimeMillis() - start)
+//        val trashFolder = getTrashFolder(store)
+//        println(System.currentTimeMillis() - start)
+//
+//        val moveButton = Button.builder()
+//            .setLabel("Move to trash")
+//            .setCssClasses(arrayOf("flat"))
+//            .onClicked {
+//                if (trashFolder != null) {
+//                    popover.popdown()
+//                    box.visible = false
+//                    scope.launch {
+//                        moveEmail(item.message, trashFolder)
+//                    }
+//                } else {
+//                    println("Trash folder not found")
+//                }
+//
+//            }
+//            .build()
+//
+//        if (trashFolder != null) {
+//            contextMenuBox.append(moveButton)
+//        }
     }
-    return emailsFactory
+    return messagesFactory
 }
