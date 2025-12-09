@@ -73,7 +73,6 @@ fun setupMessagesFactories(): SignalListItemFactory {
             .setCssClasses(arrayOf("dimmed"))
             .setEllipsize(EllipsizeMode.END)
             .build()
-
         val subject = Label.builder()
             .setHalign(Align.START)
             .setEllipsize(EllipsizeMode.END)

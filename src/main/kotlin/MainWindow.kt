@@ -260,7 +260,8 @@ class MainWindow : ApplicationWindow() {
                         webView.onContextMenu { _, hitTestResult ->
                             if (hitTestResult.contextIsSelection() ||
                                 hitTestResult.contextIsLink() ||
-                                hitTestResult.contextIsImage()) {
+                                hitTestResult.contextIsImage()
+                            ) {
                                 false
                             } else {
                                 true
@@ -291,26 +292,28 @@ class MainWindow : ApplicationWindow() {
 
         val senderBox = Box.builder().setSpacing(8).build()
 
-        val from = Label.builder().setUseMarkup(true).setEllipsize(EllipsizeMode.END).build()
+        val from = Label.builder().setUseMarkup(true).setEllipsize(EllipsizeMode.END).setSelectable(true).build()
         from.setMarkup("<b>${sender.first}</b>")
 
         val address = Label.builder()
             .setLabel(sender.second)
             .setEllipsize(EllipsizeMode.END)
             .setCssClasses(arrayOf("dimmed"))
+            .setSelectable(true)
             .build()
 
         senderBox.append(from)
         senderBox.append(address)
         detailsSenderBox.append(senderBox)
 
-        val subject = Label.builder().setLabel(message.subject).setEllipsize(EllipsizeMode.END).build()
+        val subject =
+            Label.builder().setLabel(message.subject).setEllipsize(EllipsizeMode.END).setSelectable(true).build()
         detailsSubjectBox.append(subject)
 
         val recipientBox = Box.builder().setSpacing(8).build()
 
         for (address in to) {
-            val label = Label.builder().setLabel(address).setEllipsize(EllipsizeMode.END).build()
+            val label = Label.builder().setLabel(address).setEllipsize(EllipsizeMode.END).setSelectable(true).build()
             recipientBox.append(label)
         }
 
