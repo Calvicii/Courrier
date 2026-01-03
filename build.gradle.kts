@@ -13,13 +13,12 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    api("io.github.jwharm.javagi:gio:0.12.2")
-    implementation("io.github.jwharm.javagi:gtk:0.12.2")
-    implementation("io.github.jwharm.javagi:adw:0.12.2")
+    implementation("org.java-gi:gtk:0.13.1")
+    implementation("org.java-gi:adw:0.13.1")
+    implementation("org.java-gi:webkit:0.13.1")
     implementation(project(":libs:goa"))
     implementation("com.sun.mail:jakarta.mail:2.0.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("io.github.jwharm.javagi:webkit:0.12.2")
 }
 
 tasks.test {

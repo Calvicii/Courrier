@@ -8,8 +8,8 @@ import ca.kebs.courrier.models.MailRow
 import ca.kebs.courrier.services.MailManager
 import goa.Client
 import goa.GoaObject
-import io.github.jwharm.javagi.gtk.annotations.GtkChild
-import io.github.jwharm.javagi.gtk.annotations.GtkTemplate
+import org.javagi.gtk.annotations.GtkChild
+import org.javagi.gtk.annotations.GtkTemplate
 import jakarta.mail.Folder
 import org.gnome.adw.ApplicationWindow
 import org.gnome.adw.Clamp
@@ -29,7 +29,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.gnome.adw.NavigationPage
 import org.gnome.adw.NavigationSplitView
-import org.gnome.gio.AppInfo
 import org.gnome.gio.ListStore
 import org.gnome.gtk.Frame
 import org.gnome.gtk.Label
@@ -37,9 +36,9 @@ import org.gnome.gtk.ScrolledWindow
 import org.gnome.gtk.SingleSelection
 import org.gnome.gtk.Stack
 import org.gnome.pango.EllipsizeMode
-import org.gnome.webkit.NavigationPolicyDecision
-import org.gnome.webkit.PolicyDecisionType
-import org.gnome.webkit.WebView
+import org.webkitgtk.WebContext
+import org.webkitgtk.WebView
+import org.webkitgtk.WebsiteDataManager
 import java.text.SimpleDateFormat
 
 @GtkTemplate(name = "MainWindow", ui = "/ca/kebs/main.ui")
@@ -240,21 +239,21 @@ class MainWindow : ApplicationWindow() {
                         val webView = WebView()
 
                         // Redirect links to the default browser
-                        webView.onDecidePolicy { decision, decisionType ->
-                            if (decisionType == PolicyDecisionType.NAVIGATION_ACTION && isInit) {
-                                val navigation = decision as NavigationPolicyDecision
-                                val request = navigation.navigationAction.request
-                                val uri = request.uri
-
-                                AppInfo.launchDefaultForUri(uri, null)
-
-                                decision.ignore()
-                                true
-                            } else {
-                                isInit = true
-                                false
-                            }
-                        }
+//                        webView.onDecidePolicy { decision, decisionType ->
+//                            if (decisionType == PolicyDecisionType.NAVIGATION_ACTION && isInit) {
+//                                val navigation = decision as NavigationPolicyDecision
+//                                val request = navigation.navigationAction.request
+//                                val uri = request.uri
+//
+//                                AppInfo.launchDefaultForUri(uri, null)
+//
+//                                decision.ignore()
+//                                true
+//                            } else {
+//                                isInit = true
+//                                false
+//                            }
+//                        }
 
                         // Disable web related context menu
                         webView.onContextMenu { _, hitTestResult ->
@@ -268,6 +267,16 @@ class MainWindow : ApplicationWindow() {
                             }
                         }
 
+                        val dataManager = WebsiteDataManager.builder().setIsEphemeral(true).build()
+                        dataManager.faviconsEnabled = true
+                        val webContext = WebContext()
+
+                        webView.connect("notify::favicon") {
+                            println(webView.favicon)
+                        }
+                        webView.onNotify("favicon") {
+                            println(webView.favicon)
+                        }
                         webView.loadHtml(message.content, null)
                         contentFrame.child = webView
                         contentStack.visibleChild = contentBox

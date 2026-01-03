@@ -1,7 +1,6 @@
 package ca.kebs.courrier.services
 
 import goa.GoaObject
-import io.github.jwharm.javagi.base.Out
 import jakarta.mail.Folder
 import jakarta.mail.Message
 import jakarta.mail.Session
@@ -9,6 +8,7 @@ import jakarta.mail.Store
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.gnome.gio.Cancellable
+import org.javagi.base.Out
 import java.util.Properties
 
 object MailManager {
