@@ -14,5 +14,6 @@
         <file alias="scalable/actions/mail-read-symbolic.svg" preprocess="xml-stripblanks">icons/mail-read-symbolic.svg</file>
         <file alias="scalable/actions/dock-left-symbolic.svg" preprocess="xml-stripblanks">icons/dock-left-symbolic.svg</file>
         <file alias="scalable/actions/mailbox-symbolic.svg" preprocess="xml-stripblanks">icons/mailbox-symbolic.svg</file>
+        <file alias="scalable/actions/chat-bubble-empty-symbolic.svg" preprocess="xml-stripblanks">icons/chat-bubble-empty-symbolic.svg</file>
     </gresource>
 </gresources>

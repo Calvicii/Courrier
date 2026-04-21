@@ -80,6 +80,9 @@ class MainWindow : ApplicationWindow() {
     @GtkChild(name = "emails_scrolled_window")
     lateinit var emailsScrolledWindow: ScrolledWindow
 
+    @GtkChild(name = "emails_status_page")
+    lateinit var emailsStatusPage: StatusPage
+
     // Content widgets
     @GtkChild(name = "content_stack")
     lateinit var contentStack: Stack
@@ -191,6 +194,7 @@ class MainWindow : ApplicationWindow() {
                         loadMessages(folder)
                     } else {
                         emailsNavigationPage.title = "Messages"
+                        emailsStack.visibleChild = emailsStatusPage
                         // TODO: Display a status page
                     }
                     innerSplitView.showContent = false

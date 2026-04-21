@@ -93,6 +93,12 @@ template $MainWindow: Adw.ApplicationWindow {
           }
 
           content: Stack emails_stack {
+            Adw.StatusPage emails_status_page {
+              title: _("Messages");
+              description: _("Select a folder to display its messages");
+              icon-name: "chat-bubble-empty-symbolic";
+            }
+
             ScrolledWindow emails_scrolled_window {
               vexpand: true;
 
@@ -100,8 +106,6 @@ template $MainWindow: Adw.ApplicationWindow {
                 styles [
                   "navigation-sidebar",
                 ]
-
-
               }
             }
 
